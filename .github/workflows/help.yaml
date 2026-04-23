@@ -1,0 +1,35 @@
+name: Docker CI Test
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Build da Imagem Docker
+        run: |
+          # Aqui o GitHub age como se fosse o seu terminal
+          docker build -t minha-imagem-teste:latest .
+
+      - name: Testar se o container sobe
+        run: |
+          # Rodando o container no modo "detached" para testar
+          docker run -d -p 8080:80 --name test-container minha-imagem-teste:latest
+          
+          # Espera 5 segundos para o Nginx iniciar
+          sleep 5
+          
+          # O teste de fogo: o curl interno do GitHub Actions
+          curl -I localhost:8080
+          
+      - name: Verificar Logs em caso de erro
+        if: failure()
+        run: docker logs test-container
